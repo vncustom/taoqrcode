@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel QR Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .file-info {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .file-name {
+            color: #333;
+            font-weight: bold;
+            word-break: break-all;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .qr-result {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .qr-result.show {
+            display: block;
+        }
+        
+        .qr-result img {
+            max-width: 300px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Excel QR Generator</h1>
+        <p class="subtitle">Tạo QR Code từ cột E và chèn vào cột Q</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('excel')">📊 Excel File</button>
+            <button class="tab" onclick="switchTab('single')">🔲 QR Đơn</button>
+        </div>
+        
+        <!-- Tab Excel -->
+        <div id="excel-tab" class="tab-content active">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <p style="color: #666; margin-bottom: 10px;">Kéo thả file Excel vào đây hoặc click để chọn</p>
+                <p style="color: #999; font-size: 14px;">Chỉ chấp nhận file .xlsx</p>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx">
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <p>📄 File đã chọn:</p>
+                <p class="file-name" id="fileName"></p>
+            </div>
+            
+            <button class="btn" id="generateBtn" disabled>Tạo QR Code</button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Đang xử lý... Vui lòng đợi</p>
+            </div>
+            
+            <div class="message" id="message"></div>
+        </div>
+        
+        <!-- Tab Single QR -->
+        <div id="single-tab" class="tab-content">
+            <div class="input-group">
+                <label for="qrText">Nhập nội dung QR Code:</label>
+                <input type="text" id="qrText" placeholder="Nhập text, URL, số điện thoại...">
+            </div>
+            
+            <button class="btn" id="generateSingleBtn">Tạo QR Code</button>
+            
+            <div class="loading" id="loadingSingle">
+                <div class="spinner"></div>
+                <p>Đang tạo QR Code...</p>
+            </div>
+            
+            <div class="qr-result" id="qrResult">
+                <img id="qrImage" src="" alt="QR Code">
+                <p style="margin-top: 15px;">
+                    <a id="downloadQR" download="qrcode.png" style="color: #667eea; text-decoration: none; font-weight: bold;">⬇️ Tải xuống</a>
+                </p>
+            </div>
+            
+            <div class="message" id="messageSingle"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'excel') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('excel-tab').classList.add('active');
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('single-tab').classList.add('active');
+            }
+        }
+        
+        // Excel tab functionality
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const message = document.getElementById('message');
+        
+        let selectedFile = null;
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            if (!file.name.endsWith('.xlsx')) {
+                showMessage('Chỉ chấp nhận file Excel (.xlsx)', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.add('show');
+            generateBtn.disabled = false;
+            message.classList.remove('show');
+        }
+        
+        generateBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            generateBtn.disabled = true;
+            loading.classList.add('show');
+            message.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'qr_generated.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showMessage('✅ Tạo QR Code thành công! File đã được tải xuống.', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage('❌ Lỗi: ' + error.error, 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Lỗi kết nối: ' + error.message, 'error');
+            } finally {
+                loading.classList.remove('show');
+                generateBtn.disabled = false;
+            }
+        });
+        
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = 'message show ' + type;
+        }
+        
+        // Single QR tab functionality
+        const qrText = document.getElementById('qrText');
+        const generateSingleBtn = document.getElementById('generateSingleBtn');
+        const loadingSingle = document.getElementById('loadingSingle');
+        const qrResult = document.getElementById('qrResult');
+        const qrImage = document.getElementById('qrImage');
+        const downloadQR = document.getElementById('downloadQR');
+        const messageSingle = document.getElementById('messageSingle');
+        
+        generateSingleBtn.addEventListener('click', async () => {
+            const text = qrText.value.trim();
+            
+            if (!text) {
+                showMessageSingle('⚠️ Vui lòng nhập nội dung', 'error');
+                return;
+            }
+            
+            generateSingleBtn.disabled = true;
+            loadingSingle.classList.add('show');
+            qrResult.classList.remove('show');
+            messageSingle.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/generate-single', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    qrImage.src = data.image;
+                    downloadQR.href = data.image;
+                    qrResult.classList.add('show');
+                    showMessageSingle('✅ Tạo QR Code thành công!', 'success');
+                } else {
+                    showMessageSingle('❌ Lỗi: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessageSingle('❌ Lỗi kết nối: ' + error.message, 'error');
+            } finally {
+                loadingSingle.classList.remove('show');
+                generateSingleBtn.disabled = false;
+            }
+        });
+        
+        function showMessageSingle(text, type) {
+            messageSingle.textContent = text;
+            messageSingle.className = 'message show ' + type;
+        }
+        
+        // Enter key support
+        qrText.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                generateSingleBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
