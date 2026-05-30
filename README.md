@@ -65,10 +65,15 @@ cd taoqrcode
 pip install -r requirements.txt
 
 # Chạy app
-python api/index.py
+python run.py
 ```
 
 Mở trình duyệt tại: `http://localhost:5000`
+
+**Lưu ý:** Nếu gặp lỗi với Pillow trên Windows Python 3.14, bạn có thể:
+- Dùng Python 3.11 hoặc 3.12
+- Hoặc cài Pillow từ wheel: `pip install --upgrade Pillow`
+- App vẫn deploy được bình thường trên Vercel (Vercel dùng Python 3.9-3.12)
 
 ## 📁 Cấu trúc Project
 

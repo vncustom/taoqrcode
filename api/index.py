@@ -8,7 +8,10 @@ import shutil
 from io import BytesIO
 import base64
 
-app = Flask(__name__)
+# Cấu hình Flask để tìm templates ở thư mục cha
+app = Flask(__name__, 
+            template_folder='../templates',
+            static_folder='../static')
 
 @app.route('/')
 def index():
